@@ -1,0 +1,13 @@
+#             THIS FILE IS AUTOMATICALLY DISTRIBUTED BY PUPPET.
+#                  ANY LOCAL CHANGES WILL BE OVERWRITTEN!
+
+<%= @logrotate_rule_logs.join(" ") %> {
+<% @logrotate_rule_args.each do |k, v| -%>
+	<%= k %><%= v.empty? ? "" : " #{v}" %>
+<% end -%>
+<% @logrotate_rule_scripts.each do |k, v| -%>
+	<%= k %>
+		<%= v %>
+	endscript
+<% end -%>
+}
