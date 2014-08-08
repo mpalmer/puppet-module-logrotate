@@ -3,7 +3,6 @@ require 'rspec-puppet'
 RSpec.configure do |c|
 	c.fail_fast = true
 #	c.full_backtrace = true
-	c.formatter = "Fuubar"
 	
 	tmpdir = File.expand_path('../../.tmp', __FILE__)
 

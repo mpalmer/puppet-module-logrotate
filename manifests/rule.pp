@@ -119,64 +119,89 @@ define logrotate::rule(
 	$lastaction_script  = undef
 ) {
 	$logrotate_rule_logs = maybe_split($logs, "\s+")
-	$logrotate_rule_args = {}
-	
+
 	if $compress {
-		$logrotate_rule_args["compress"] = ""
-		
 		if $compress == "delayed" {
-			$logrotate_rule_args["delaycompress"] = ""
+			$lr_compress = { "compress" => "", "delaycompress" => "" }
+		} else {
+			$lr_compress = { "compress" => "" }
 		}
 	} else {
-		$logrotate_rule_args["nocompress"] = ""
+		$lr_compress = { "nocompress" => "" }
 	}
-	
+
 	if $create {
-		$logrotate_rule_args["create"] = $create
+		$lr_create = { "create" => $create }
+	} else {
+		$lr_create = { }
 	}
-	
+
 	if $frequency == "daily" or $frequency == "weekly" or
 	   $frequency == "monthly" or $frequency == "yearly" {
-		$logrotate_rule_args[$frequency] = ""
+		$lr_frequency = { "$frequency" => "" }
 	} else {
 		fail("Invalid frequency for Logrotate::Rule[${name}]: '${frequency}'")
 	}
-	
-	$logrotate_rule_args["rotate"] = $keep
-	
+
+	$lr_rotate = { "rotate" => $keep }
+
 	if $missingok {
-		$logrotate_rule_args["missingok"] = ""
+		$lr_missingok = { "missingok" => "" }
 	} else {
-		$logrotate_rule_args["nomissingok"] = ""
+		$lr_missingok = { "nomissingok" => "" }
 	}
-	
+
 	if $rotate_if_empty {
-		$logrotate_rule_args["ifempty"] = ""
+		$lr_ifempty = { "ifempty" => "" }
 	} else {
-		$logrotate_rule_args["notifempty"] = ""
+		$lr_ifempty = { "notifempty" => "" }
 	}
-	
+
 	if $sharedscripts {
-		$logrotate_rule_args["sharedscripts"] = ""
+		$lr_sharedscripts = { "sharedscripts" => "" }
 	} else {
-		$logrotate_rule_args["nosharedscripts"] = ""
+		$lr_sharedscripts = { "nosharedscripts" => "" }
 	}
-	
-	$logrotate_rule_scripts = {}
-	
+
+	$logrotate_rule_args = merge($lr_compress,
+	                             $lr_create,
+	                             $lr_frequency,
+	                             $lr_rotate,
+	                             $lr_missingok,
+	                             $lr_ifempty,
+	                             $lr_sharedscripts
+	                            )
+
 	if $prerotate_script {
-		$logrotate_rule_scripts["prerotate"] = $prerotate_script
+		$lr_script_prerotate = { "prerotate" => $prerotate_script }
+	} else {
+		$lr_script_prerotate = { }
 	}
+
 	if $postrotate_script {
-		$logrotate_rule_scripts["postrotate"] = $postrotate_script
+		$lr_script_postrotate = { "postrotate" => $postrotate_script }
+	} else {
+		$lr_script_postrotate = { }
 	}
+
 	if $firstaction_script {
-		$logrotate_rule_scripts["firstaction"] = $firstaction_script
+		$lr_script_firstaction = { "firstaction" => $firstaction_script }
+	} else {
+		$lr_script_firstaction = { }
 	}
+
 	if $lastaction_script {
-		$logrotate_rule_scripts["lastaction"] = $lastaction_script
+		$lr_script_lastaction = { "lastaction" => $lastaction_script }
+	} else {
+		$lr_script_lastaction = { }
 	}
-	
+
+	$logrotate_rule_scripts = merge($lr_script_prerotate,
+	                                $lr_script_postrotate,
+	                                $lr_script_firstaction,
+	                                $lr_script_lastaction
+	                               )
+
 	file { "/etc/logrotate.d/${name}":
 		ensure => file,
 		content => template("logrotate/etc/logrotate.d/rule")
