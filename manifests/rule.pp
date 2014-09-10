@@ -33,12 +33,23 @@
 #     that compression be enabled, but that the most recently rotated log file
 #     not be compressed.
 #
+#  * `copy` (boolean or string; default `false`)
+#
+#     If set to `true`, then the `copy` directive will be set in the
+#     logrotate configuration fragment (that is, the log file will be
+#     copied, rather than moved, and the original log file will be left
+#     untouched).  If set to `"truncate"`, then the `copytruncate` directive
+#     will be set in the logrotate configuration fragment, and so the log
+#     file will copied and then truncated (which can result in loss of log
+#     data).  Note that `copy` and `create` cannot both be set.
+#
 #  * `create` (string; optional; default `undef`)
 #
 #     If a non-`undef` value, it will be passed as-is to the `create`
 #     parameter in the log rotation config.  The usual value for this is
 #     `"<mode> <user> <group>"`.  If `undef`, no `create` parameter will be
-#     set in the configuration.
+#     set in the configuration.  Note that `copy` and `create` cannot both
+#     be set.
 #
 #  * `frequency` (string; optional; default `"daily"`)
 #
@@ -107,6 +118,7 @@
 define logrotate::rule(
 	$logs,
 	$compress           = true,
+	$copy               = false
 	$create             = undef,
 	$frequency          = "daily",
 	$keep               = 7,
@@ -118,6 +130,10 @@ define logrotate::rule(
 	$firstaction_script = undef,
 	$lastaction_script  = undef
 ) {
+	if $copy and $create {
+		fail "Only one of \$copy and \$create can be set"
+	}
+
 	$logrotate_rule_logs = maybe_split($logs, "\s+")
 
 	if $compress {
@@ -128,6 +144,17 @@ define logrotate::rule(
 		}
 	} else {
 		$lr_compress = { "nocompress" => "" }
+	}
+
+	if $copy == "truncate" {
+		$lr_copy = { "copytruncate" => "" }
+	} elsif $copy == true {
+		$lr_copy = { "copy" => "" }
+	} elsif $copy == false {
+		# noop
+		$lr_copy = {}
+	} else {
+		fail "Unknown value for \$copy: '$copy'"
 	}
 
 	if $create {
@@ -164,6 +191,7 @@ define logrotate::rule(
 	}
 
 	$logrotate_rule_args = merge($lr_compress,
+	                             $lr_copy,
 	                             $lr_create,
 	                             $lr_frequency,
 	                             $lr_rotate,
