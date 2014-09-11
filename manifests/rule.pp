@@ -118,7 +118,7 @@
 define logrotate::rule(
 	$logs,
 	$compress           = true,
-	$copy               = false
+	$copy               = false,
 	$create             = undef,
 	$frequency          = "daily",
 	$keep               = 7,
